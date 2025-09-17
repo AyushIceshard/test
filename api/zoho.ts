@@ -150,3 +150,8 @@ export async function updateZohoItemStock(sku: string, quantityToReduce: number)
   
   return res.inventory_adjustment;
 }
+
+export async function getZohoItemById(itemId: string | number) {
+  const data = await zohoFetch(`items/${itemId}`);
+  return data.item;
+}

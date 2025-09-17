@@ -33,8 +33,9 @@ export async function shopifyFetch(path: string, init?: RequestInit): Promise<an
 
 export async function findVariantBySKU(sku: string) {
   const data = await shopifyFetch(`variants.json?sku=${encodeURIComponent(sku)}`);
-  const variants = data.variants || [];
-  return variants[0] || null;
+  const variants = (data.variants || []) as Array<{ sku?: string }>;
+  const exact = variants.find((v) => v.sku === sku);
+  return (exact as any) || (variants[0] as any) || null;
 }
 
 export async function getPrimaryLocationId(): Promise<number> {
