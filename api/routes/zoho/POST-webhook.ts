@@ -102,7 +102,14 @@ const handler = async ({ request, reply }: { request: any; reply: any }) => {
     // Two payload shapes supported:
     // 1) Items payload with direct sku/rate/available_stock
     // 2) Inventory Adjustment payload with line_items[] having item_id and quantity/new_quantity
-    const isAdjustment = !!body?.inventory_adjustment;
+    // Detect inventory adjustment payloads from either nested or flat shapes
+    const adjNode = body?.inventory_adjustment ?? body;
+    const isAdjustment = !!(
+      body?.inventory_adjustment ||
+      adjNode?.inventory_adjustment_id ||
+      adjNode?.item_id ||
+      (Array.isArray(adjNode?.line_items) && adjNode.line_items.length > 0)
+    );
 
     if (!isAdjustment) {
       const sku = pickSKU(body);
@@ -146,8 +153,10 @@ const handler = async ({ request, reply }: { request: any; reply: any }) => {
     }
 
     // Handle Inventory Adjustment payload
-    const adj = body.inventory_adjustment || {};
-    const lines = Array.isArray(adj.line_items) ? adj.line_items : [];
+    const adj = body.inventory_adjustment || adjNode || {};
+    const lines = Array.isArray(adj.line_items)
+      ? adj.line_items
+      : (adj.item_id ? [{ item_id: adj.item_id, new_quantity: adj.new_quantity, quantity_adjusted: adj.quantity_adjusted }] : []);
     const updates: any[] = [];
 
     for (const li of lines) {
